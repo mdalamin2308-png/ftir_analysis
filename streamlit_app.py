@@ -205,13 +205,25 @@ def normalize_transmittance(y):
     return np.clip(y, 0.0, None)
 
 
-def render_spectrum_plot(x, y, baseline, peak_x=None, peak_y=None, assignments=None):
+def render_spectrum_plot(x, y, baseline, peak_x=None, peak_y=None, assignments=None, title_text=None):
     fig, ax = plt.subplots(figsize=(10, 5))
     ax.set_facecolor("white")
     fig.patch.set_facecolor("white")
     ax.plot(x, y, color="black", linewidth=1.4)
     ax.set_axisbelow(True)
     ax.grid(False)
+    if title_text:
+        ax.text(
+            0.03,
+            0.95,
+            title_text,
+            transform=ax.transAxes,
+            fontsize=10,
+            fontstyle="italic",
+            va="top",
+            ha="left",
+            bbox={"facecolor": "white", "edgecolor": "black", "pad": 0.7, "alpha": 0.95},
+        )
     if peak_x is not None and peak_y is not None and peak_x.size > 0:
         ax.scatter(peak_x, peak_y, color="black", edgecolor="white", linewidth=0.8, s=30, zorder=5)
     if assignments is not None and peak_x is not None and peak_x.size > 0:
@@ -366,16 +378,6 @@ def main():
 
         st.subheader(f"Spectrum: {source_name}")
         col1, col2 = st.columns([2, 1])
-        with col1:
-            fig = render_spectrum_plot(
-                x,
-                y,
-                baseline,
-                peak_x=peak_x,
-                peak_y=peak_y,
-                assignments=assigned_labels,
-            )
-            st.pyplot(fig)
         with col2:
             if ranked:
                 best_polymer, best_result = ranked[0]
@@ -387,6 +389,23 @@ def main():
                 st.markdown(f"Confidence: **{best_result['confidence']:.1f}%**")
             else:
                 st.write("No polymer match results available.")
+
+        if ranked:
+            title_text = f"Deep search best match: {ranked[0][0]} ({ranked[0][1]['confidence']:.1f}% confidence)"
+        else:
+            title_text = "Deep search best match: none"
+
+        with col1:
+            fig = render_spectrum_plot(
+                x,
+                y,
+                baseline,
+                peak_x=peak_x,
+                peak_y=peak_y,
+                assignments=assigned_labels,
+                title_text=title_text,
+            )
+            st.pyplot(fig)
 
         if peak_x.size > 0:
             peak_table = [
