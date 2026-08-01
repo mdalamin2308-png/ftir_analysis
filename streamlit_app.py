@@ -1,3 +1,4 @@
+
 import re
 import streamlit as st
 import matplotlib.pyplot as plt
@@ -257,37 +258,8 @@ def render_spectrum_plot(x, y, baseline, peak_x=None, peak_y=None, assignments=N
                 va="top",
                 annotation_clip=False,
             )
-    if assignments is not None and peak_x is not None and peak_x.size > 0:
-        labeled = []
-        for wx, wy, text in zip(peak_x, peak_y, assignments):
-            if text is not None:
-                labeled.append((wx, wy, text))
-        labeled = sorted(labeled, key=lambda t: -t[0])
-        if labeled:
-            max_labels = min(len(labeled), 8)
-            row_height = 20
-            for idx, (wx, wy, text) in enumerate(labeled[:max_labels]):
-                row = idx // 2
-                x_offset = 0
-                y_offset = 28 + row * row_height
-                short_text = text.replace(", ", "\n").replace(" and ", "\n")
-                if len(short_text) > 18:
-                    short_text = short_text[:18] + "..."
-                ax.vlines(wx, wy, wy + y_offset - 8, colors="#b0b0b0", linewidth=0.8, alpha=0.65)
-                ax.annotate(
-                    short_text,
-                    xy=(wx, wy),
-                    xytext=(x_offset, y_offset),
-                    textcoords="offset points",
-                    ha="center",
-                    va="bottom",
-                    fontsize=9,
-                    color="black",
-                    rotation=90,
-                    bbox={"facecolor": "white", "alpha": 0.95, "edgecolor": "black", "boxstyle": "round,pad=0.2"},
-                    arrowprops={"arrowstyle": "-", "color": "#4f4f4f", "linewidth": 0.7, "shrinkA": 0, "shrinkB": 3},
-                    annotation_clip=False,
-                )
+    # Assignment labels are intentionally not shown on the figure.
+    # Assignments are displayed in the sidebar/table; the figure shows picked transmittance values only.
     ax.set_xlim(4000, 400)
     ax.set_ylim(min(y.min() - 20, 0), max(y.max() + 70, 110))
     ax.set_xlabel("Wavenumber (cm$^{-1}$)")
