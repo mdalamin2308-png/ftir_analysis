@@ -205,6 +205,14 @@ def normalize_transmittance(y):
     return np.clip(y, 0.0, None)
 
 
+def select_top_peak_indices(peak_y, top_n=5):
+    peak_y = np.asarray(peak_y, dtype=float)
+    if peak_y.size == 0:
+        return np.array([], dtype=int)
+    selected = np.argsort(peak_y)[-top_n:]
+    return np.sort(selected)
+
+
 def render_spectrum_plot(x, y, baseline, peak_x=None, peak_y=None, assignments=None, title_text=None):
     fig, ax = plt.subplots(figsize=(10, 5))
     ax.set_facecolor("white")
@@ -234,27 +242,25 @@ def render_spectrum_plot(x, y, baseline, peak_x=None, peak_y=None, assignments=N
         labeled = sorted(labeled, key=lambda t: -t[0])
         if labeled:
             max_labels = min(len(labeled), 8)
-            row_height = 16
+            row_height = 20
             for idx, (wx, wy, text) in enumerate(labeled[:max_labels]):
                 row = idx // 2
-                side = -1 if idx % 2 == 0 else 1
-                x_offset = side * 12
-                y_offset = 32 + row * row_height
-                ha = "right" if side < 0 else "left"
+                x_offset = 0
+                y_offset = 28 + row * row_height
                 short_text = text.replace(", ", "\n").replace(" and ", "\n")
-                if len(short_text) > 26:
-                    short_text = short_text[:26] + "..."
+                if len(short_text) > 18:
+                    short_text = short_text[:18] + "..."
                 ax.vlines(wx, wy, wy + y_offset - 8, colors="#b0b0b0", linewidth=0.8, alpha=0.65)
                 ax.annotate(
                     short_text,
                     xy=(wx, wy),
                     xytext=(x_offset, y_offset),
                     textcoords="offset points",
-                    ha=ha,
+                    ha="center",
                     va="bottom",
                     fontsize=9,
                     color="black",
-                    rotation=0,
+                    rotation=90,
                     bbox={"facecolor": "white", "alpha": 0.95, "edgecolor": "black", "boxstyle": "round,pad=0.2"},
                     arrowprops={"arrowstyle": "-", "color": "#4f4f4f", "linewidth": 0.7, "shrinkA": 0, "shrinkB": 3},
                     annotation_clip=False,
@@ -370,6 +376,11 @@ def main():
         peak_x, peak_y, peak_prom = detect_peaks(x, y, prominence=1.5, width=3, distance=8)
         results = match_polymer(peak_x, peak_prom)
         ranked = sorted(results.items(), key=lambda kv: (kv[1]["confidence"], kv[1]["weight_sum"]), reverse=True)
+
+        top_inds = select_top_peak_indices(peak_y, top_n=5)
+        peak_x = peak_x[top_inds]
+        peak_y = peak_y[top_inds]
+        peak_prom = peak_prom[top_inds]
 
         assigned_labels = []
         for wn in peak_x:
