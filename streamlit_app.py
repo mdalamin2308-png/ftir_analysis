@@ -182,11 +182,15 @@ def normalize_transmittance(y):
     return np.clip(y, 0.0, None)
 
 
-def render_spectrum_plot(x, y, baseline):
+def render_spectrum_plot(x, y, baseline, peak_x=None, peak_y=None):
     fig, ax = plt.subplots(figsize=(10, 5))
     ax.plot(x, y, color="black", linewidth=1.5, label="Spectrum")
     ax.plot(x, baseline, color="firebrick", linestyle="--", linewidth=1.2, label="Baseline")
     ax.fill_between(x, baseline, y, color="lightgray", alpha=0.4)
+    if peak_x is not None and peak_y is not None and peak_x.size > 0:
+        ax.scatter(peak_x, peak_y, color="red", s=30, zorder=4, label="Detected peaks")
+        for wx, wy in zip(peak_x, peak_y):
+            ax.text(wx, wy - 4, f"{wx:.0f}", color="red", fontsize=8, ha="center", va="top", rotation=90)
     ax.set_xlim(4000, 400)
     ax.set_ylim(min(y.min() - 10, 0), max(y.max() + 10, 100))
     ax.set_xlabel("Wavenumber (cm$^{-1}$)")
@@ -277,7 +281,7 @@ def main():
         st.subheader(f"Spectrum: {source_name}")
         col1, col2 = st.columns([2, 1])
         with col1:
-            fig = render_spectrum_plot(x, y, baseline)
+            fig = render_spectrum_plot(x, y, baseline, peak_x=peak_x, peak_y=peak_y)
             st.pyplot(fig)
         with col2:
             if ranked:
