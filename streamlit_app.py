@@ -244,6 +244,19 @@ def render_spectrum_plot(x, y, baseline, peak_x=None, peak_y=None, assignments=N
         )
     if peak_x is not None and peak_y is not None and peak_x.size > 0:
         ax.scatter(peak_x, peak_y, color="black", edgecolor="white", linewidth=0.8, s=30, zorder=5)
+        # Annotate measured wavenumber for each selected peak (keeps visible on the figure)
+        for wx, wy in zip(peak_x, peak_y):
+            ax.annotate(
+                f"{wx:.0f}",
+                xy=(wx, wy),
+                xytext=(6, -12),
+                textcoords="offset points",
+                fontsize=8,
+                color="black",
+                ha="left",
+                va="top",
+                annotation_clip=False,
+            )
     if assignments is not None and peak_x is not None and peak_x.size > 0:
         labeled = []
         for wx, wy, text in zip(peak_x, peak_y, assignments):
@@ -399,9 +412,20 @@ def main():
         peak_prom = peak_prom[top_inds]
 
         assigned_labels = []
+        # For each selected peak, prefer an important assignment, otherwise show the closest assignment
         for wn in peak_x:
-            hit = find_important_assignment(wn, tolerance=20, min_importance=2)
-            assigned_labels.append(hit[0] if hit is not None else None)
+            hit_imp = find_important_assignment(wn, tolerance=20, min_importance=2)
+            if hit_imp is not None:
+                assignment, polymer, rp, diff, importance = hit_imp
+                label_text = f"{assignment}\n{int(rp)} cm-1"
+            else:
+                hit_close = find_closest_assignment(wn, tolerance=20)
+                if hit_close is not None:
+                    assignment, polymer, rp, diff = hit_close
+                    label_text = f"{assignment}\n{int(rp)} cm-1 (Δ{diff:.1f})"
+                else:
+                    label_text = None
+            assigned_labels.append(label_text)
 
         st.subheader(f"Spectrum: {source_name}")
         col1, col2 = st.columns([2, 1])
