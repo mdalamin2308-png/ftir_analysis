@@ -1,4 +1,3 @@
-
 import re
 import streamlit as st
 import matplotlib.pyplot as plt
@@ -241,7 +240,14 @@ def render_spectrum_plot(x, y, baseline, peak_x=None, peak_y=None, assignments=N
             fontstyle="italic",
             va="top",
             ha="left",
-            bbox={"facecolor": "white", "edgecolor": "black", "pad": 0.7, "alpha": 0.95},
+            bbox={
+                "facecolor": "white",
+                "edgecolor": "black",
+                "pad": 0.7,
+                "alpha": 0.95,
+                "boxstyle": "round,pad=0.4",
+                "linewidth": 0.9,
+            },
         )
     if peak_x is not None and peak_y is not None and peak_x.size > 0:
         ax.scatter(peak_x, peak_y, color="black", edgecolor="white", linewidth=0.8, s=30, zorder=5)
