@@ -209,25 +209,30 @@ def render_spectrum_plot(x, y, baseline, peak_x=None, peak_y=None, assignments=N
             if text is not None:
                 labeled.append((wx, wy, text))
         labeled = sorted(labeled, key=lambda t: -t[0])
-        bottom_y = min(y.min() - 12, 0)
-        for idx, (wx, wy, text) in enumerate(labeled[:8]):
-            tier = idx % 4
-            y_text = bottom_y - 6 - tier * 6
-            ax.annotate(
-                text,
-                xy=(wx, wy),
-                xytext=(wx, y_text),
-                textcoords="data",
-                ha="center",
-                va="top",
-                fontsize=9,
-                color="#102a5f",
-                bbox={"facecolor": "white", "alpha": 0.85, "edgecolor": "#aac0ff", "boxstyle": "round,pad=0.25"},
-                arrowprops={"arrowstyle": "-|>", "color": "#7a90c8", "linewidth": 0.8},
-                annotation_clip=False,
-            )
+        if labeled:
+            max_labels = min(len(labeled), 10)
+            row_height = 18
+            for idx, (wx, wy, text) in enumerate(labeled[:max_labels]):
+                row = idx // 2
+                side = -1 if idx % 2 == 0 else 1
+                x_offset = side * 32
+                y_offset = -24 - row * row_height
+                ha = "right" if side < 0 else "left"
+                ax.annotate(
+                    text,
+                    xy=(wx, wy),
+                    xytext=(x_offset, y_offset),
+                    textcoords="offset points",
+                    ha=ha,
+                    va="top",
+                    fontsize=9,
+                    color="#102a5f",
+                    bbox={"facecolor": "white", "alpha": 0.92, "edgecolor": "#aac0ff", "boxstyle": "round,pad=0.25"},
+                    arrowprops={"arrowstyle": "-|>", "color": "#7a90c8", "linewidth": 0.8, "shrinkA": 0, "shrinkB": 4},
+                    annotation_clip=False,
+                )
     ax.set_xlim(4000, 400)
-    ax.set_ylim(min(y.min() - 36, 0), max(y.max() + 22, 100))
+    ax.set_ylim(min(y.min() - 54, 0), max(y.max() + 22, 100))
     ax.set_xlabel("Wavenumber (cm$^{-1}$)")
     ax.set_ylabel("Transmittance (%)")
     ax.spines["top"].set_visible(False)
