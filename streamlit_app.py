@@ -1,3 +1,4 @@
+import re
 import streamlit as st
 import matplotlib.pyplot as plt
 import numpy as np
@@ -19,11 +20,12 @@ try:
 except ImportError:
     get_script_run_ctx = None
 
-if get_script_run_ctx is None or get_script_run_ctx() is None:
-    raise SystemExit(
-        "This Streamlit app must be run with `streamlit run streamlit_app.py` "
-        "instead of `python streamlit_app.py`."
-    )
+
+def is_running_in_streamlit():
+    if get_script_run_ctx is None:
+        return False
+    return get_script_run_ctx() is not None
+
 
 DATA_DIR = Path(__file__).resolve().parent
 
@@ -202,14 +204,20 @@ def match_polymer(peak_x, peak_prom, tolerance=20):
 
 def normalize_transmittance(y):
     y = np.asarray(y, dtype=float)
-    return np.clip(y, 0.0, None)
+    return np.clip(y, 0.0, 100.0)
 
 
-def select_top_peak_indices(peak_y, top_n=5):
+def select_top_peak_indices(peak_y, peak_prom=None, top_n=5):
     peak_y = np.asarray(peak_y, dtype=float)
     if peak_y.size == 0:
         return np.array([], dtype=int)
-    selected = np.argsort(peak_y)[-top_n:]
+    if peak_prom is None:
+        selected = np.argsort(peak_y)[:top_n]
+    else:
+        peak_prom = np.asarray(peak_prom, dtype=float)
+        if peak_prom.shape != peak_y.shape:
+            peak_prom = np.asarray(peak_prom[: peak_y.size], dtype=float)
+        selected = np.argsort(peak_prom)[-top_n:]
     return np.sort(selected)
 
 
@@ -217,6 +225,8 @@ def render_spectrum_plot(x, y, baseline, peak_x=None, peak_y=None, assignments=N
     fig, ax = plt.subplots(figsize=(10, 5))
     ax.set_facecolor("white")
     fig.patch.set_facecolor("white")
+    if baseline is not None and baseline.size == x.size:
+        ax.plot(x, baseline, color="gray", linestyle="--", linewidth=1, alpha=0.65)
     ax.plot(x, y, color="black", linewidth=1.4)
     ax.set_axisbelow(True)
     ax.grid(False)
@@ -279,13 +289,19 @@ def render_spectrum_plot(x, y, baseline, peak_x=None, peak_y=None, assignments=N
 
 
 def load_sample_files():
-    files = sorted(DATA_DIR.glob("S[1-9].txt"), key=lambda p: int(p.stem[1:]))
-    if (DATA_DIR / "S10.txt").exists():
-        files.append(DATA_DIR / "S10.txt")
+    files = sorted(
+        DATA_DIR.glob("sample-*.txt"),
+        key=lambda p: int(re.search(r"sample-(\d+)\.txt", p.name).group(1)) if re.search(r"sample-(\d+)\.txt", p.name) else p.name,
+    )
     return files
 
 
 def main():
+    if not is_running_in_streamlit():
+        raise SystemExit(
+            "This Streamlit app must be run with `streamlit run streamlit_app.py` "
+            "instead of `python streamlit_app.py`."
+        )
     st.set_page_config(page_title="FTIR Polymer ID", layout="wide")
     st.markdown(
         '''
@@ -377,7 +393,7 @@ def main():
         results = match_polymer(peak_x, peak_prom)
         ranked = sorted(results.items(), key=lambda kv: (kv[1]["confidence"], kv[1]["weight_sum"]), reverse=True)
 
-        top_inds = select_top_peak_indices(peak_y, top_n=5)
+        top_inds = select_top_peak_indices(peak_y, peak_prom=peak_prom, top_n=5)
         peak_x = peak_x[top_inds]
         peak_y = peak_y[top_inds]
         peak_prom = peak_prom[top_inds]
