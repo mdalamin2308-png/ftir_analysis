@@ -417,6 +417,20 @@ def main():
             else:
                 st.write("No polymer match results available.")
 
+            assignment_rows = []
+            for wn, wy, label in zip(peak_x, peak_y, assigned_labels):
+                assignment_rows.append(
+                    {
+                        "Wavenumber": f"{wn:.1f}",
+                        "Transmittance": f"{wy:.1f}%",
+                        "Assignment": label if label is not None else "Unassigned",
+                    }
+                )
+
+            if assignment_rows:
+                st.markdown("### Selected peak assignments")
+                st.table(assignment_rows)
+
         if ranked:
             title_text = f"Deep search best match: {ranked[0][0]} ({ranked[0][1]['confidence']:.1f}% confidence)"
         else:
