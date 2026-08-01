@@ -1,2 +1,2 @@
 # ftir_analysis
-FTIR Polymer Identification — Streamlit Web App
+FTIR Polymer Identification - Streamlit Web App
