@@ -433,10 +433,11 @@ def main():
                 st.markdown("### Selected peak assignments")
                 st.table(assignment_rows)
 
-        if ranked:
-            title_text = f"Deep search best match: {ranked[0][0]} ({ranked[0][1]['confidence']:.1f}% confidence)"
+        if ranked and ranked[0][0]:
+            # Only show the polymer name on the figure — confidence/details remain in the sidebar
+            title_text = f"{ranked[0][0]}"
         else:
-            title_text = "Deep search best match: none"
+            title_text = ""
 
         with col1:
             fig = render_spectrum_plot(
