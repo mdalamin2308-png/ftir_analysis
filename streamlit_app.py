@@ -207,17 +207,13 @@ def normalize_transmittance(y):
 
 def render_spectrum_plot(x, y, baseline, peak_x=None, peak_y=None, assignments=None):
     fig, ax = plt.subplots(figsize=(10, 5))
-    ax.set_facecolor("#fcfdff")
-    fig.patch.set_facecolor("#fcfdff")
-    ax.plot(x, y, color="#172f57", linewidth=1.9, label="Spectrum")
-    ax.plot(x, baseline, color="#c0392b", linestyle="--", linewidth=1.2, label="Baseline")
-    ax.fill_between(x, baseline, y, color="#d8e3ff", alpha=0.45)
+    ax.set_facecolor("white")
+    fig.patch.set_facecolor("white")
+    ax.plot(x, y, color="black", linewidth=1.4)
     ax.set_axisbelow(True)
-    ax.grid(True, color="#e8ecf5", linestyle="-", linewidth=0.9)
+    ax.grid(False)
     if peak_x is not None and peak_y is not None and peak_x.size > 0:
-        ax.scatter(peak_x, peak_y, color="#d53838", edgecolor="white", linewidth=0.8, s=40, zorder=5, label="Detected peaks")
-        for wx, wy in zip(peak_x, peak_y):
-            ax.text(wx, wy - 3.5, f"{wx:.0f}", color="#d53838", fontsize=8, ha="center", va="top", rotation=90)
+        ax.scatter(peak_x, peak_y, color="black", edgecolor="white", linewidth=0.8, s=30, zorder=5)
     if assignments is not None and peak_x is not None and peak_x.size > 0:
         labeled = []
         for wx, wy, text in zip(peak_x, peak_y, assignments):
@@ -225,41 +221,41 @@ def render_spectrum_plot(x, y, baseline, peak_x=None, peak_y=None, assignments=N
                 labeled.append((wx, wy, text))
         labeled = sorted(labeled, key=lambda t: -t[0])
         if labeled:
-            max_labels = min(len(labeled), 10)
-            row_height = 24
+            max_labels = min(len(labeled), 8)
+            row_height = 16
             for idx, (wx, wy, text) in enumerate(labeled[:max_labels]):
                 row = idx // 2
                 side = -1 if idx % 2 == 0 else 1
-                x_offset = side * 34
-                y_offset = -24 - row * row_height
+                x_offset = side * 12
+                y_offset = 32 + row * row_height
                 ha = "right" if side < 0 else "left"
                 short_text = text.replace(", ", "\n").replace(" and ", "\n")
-                if len(short_text) > 22:
-                    short_text = short_text[:22] + "..."
+                if len(short_text) > 26:
+                    short_text = short_text[:26] + "..."
+                ax.vlines(wx, wy, wy + y_offset - 8, colors="#b0b0b0", linewidth=0.8, alpha=0.65)
                 ax.annotate(
                     short_text,
                     xy=(wx, wy),
                     xytext=(x_offset, y_offset),
                     textcoords="offset points",
                     ha=ha,
-                    va="center",
+                    va="bottom",
                     fontsize=9,
-                    color="#102a5f",
-                    rotation=90,
-                    bbox={"facecolor": "white", "alpha": 0.94, "edgecolor": "#aac0ff", "boxstyle": "round,pad=0.25"},
-                    arrowprops={"arrowstyle": "-|>", "color": "#7a90c8", "linewidth": 0.8, "shrinkA": 0, "shrinkB": 4},
+                    color="black",
+                    rotation=0,
+                    bbox={"facecolor": "white", "alpha": 0.95, "edgecolor": "black", "boxstyle": "round,pad=0.2"},
+                    arrowprops={"arrowstyle": "-", "color": "#4f4f4f", "linewidth": 0.7, "shrinkA": 0, "shrinkB": 3},
                     annotation_clip=False,
                 )
     ax.set_xlim(4000, 400)
-    ax.set_ylim(min(y.min() - 74, -10), max(y.max() + 18, 100))
+    ax.set_ylim(min(y.min() - 20, 0), max(y.max() + 70, 110))
     ax.set_xlabel("Wavenumber (cm$^{-1}$)")
     ax.set_ylabel("Transmittance (%)")
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
-    ax.spines["bottom"].set_color("#a8b8d3")
-    ax.spines["left"].set_color("#a8b8d3")
-    ax.tick_params(direction="in", length=6, width=1, colors="#3a4d7c", labelcolor="#3a4d7c")
-    ax.legend(loc="upper right", frameon=True, framealpha=0.95, edgecolor="#c4d3e8")
+    ax.spines["bottom"].set_color("black")
+    ax.spines["left"].set_color("black")
+    ax.tick_params(direction="in", length=6, width=1, colors="black", labelcolor="black")
     fig.tight_layout(pad=1.0)
     return fig
 
