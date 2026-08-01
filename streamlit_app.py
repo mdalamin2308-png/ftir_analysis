@@ -196,11 +196,13 @@ def render_spectrum_plot(x, y, baseline, peak_x=None, peak_y=None, assignments=N
     fig, ax = plt.subplots(figsize=(10, 5))
     ax.set_facecolor("#fcfdff")
     fig.patch.set_facecolor("#fcfdff")
-    ax.plot(x, y, color="#0b1f44", linewidth=1.6, label="Spectrum")
-    ax.plot(x, baseline, color="#d53838", linestyle="--", linewidth=1.3, label="Baseline")
-    ax.fill_between(x, baseline, y, color="#c8d6ff", alpha=0.45)
+    ax.plot(x, y, color="#172f57", linewidth=1.9, label="Spectrum")
+    ax.plot(x, baseline, color="#c0392b", linestyle="--", linewidth=1.2, label="Baseline")
+    ax.fill_between(x, baseline, y, color="#d8e3ff", alpha=0.45)
+    ax.set_axisbelow(True)
+    ax.grid(True, color="#e8ecf5", linestyle="-", linewidth=0.9)
     if peak_x is not None and peak_y is not None and peak_x.size > 0:
-        ax.scatter(peak_x, peak_y, color="#d53838", edgecolor="white", linewidth=0.8, s=40, zorder=4, label="Detected peaks")
+        ax.scatter(peak_x, peak_y, color="#d53838", edgecolor="white", linewidth=0.8, s=40, zorder=5, label="Detected peaks")
         for wx, wy in zip(peak_x, peak_y):
             ax.text(wx, wy - 3.5, f"{wx:.0f}", color="#d53838", fontsize=8, ha="center", va="top", rotation=90)
     if assignments is not None and peak_x is not None and peak_x.size > 0:
@@ -216,7 +218,7 @@ def render_spectrum_plot(x, y, baseline, peak_x=None, peak_y=None, assignments=N
                 row = idx // 2
                 side = -1 if idx % 2 == 0 else 1
                 x_offset = side * 32
-                y_offset = -24 - row * row_height
+                y_offset = -26 - row * row_height
                 ha = "right" if side < 0 else "left"
                 ax.annotate(
                     text,
@@ -227,19 +229,21 @@ def render_spectrum_plot(x, y, baseline, peak_x=None, peak_y=None, assignments=N
                     va="top",
                     fontsize=9,
                     color="#102a5f",
-                    bbox={"facecolor": "white", "alpha": 0.92, "edgecolor": "#aac0ff", "boxstyle": "round,pad=0.25"},
+                    bbox={"facecolor": "white", "alpha": 0.94, "edgecolor": "#aac0ff", "boxstyle": "round,pad=0.3"},
                     arrowprops={"arrowstyle": "-|>", "color": "#7a90c8", "linewidth": 0.8, "shrinkA": 0, "shrinkB": 4},
                     annotation_clip=False,
                 )
     ax.set_xlim(4000, 400)
-    ax.set_ylim(min(y.min() - 54, 0), max(y.max() + 22, 100))
+    ax.set_ylim(min(y.min() - 74, -10), max(y.max() + 18, 100))
     ax.set_xlabel("Wavenumber (cm$^{-1}$)")
     ax.set_ylabel("Transmittance (%)")
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
-    ax.tick_params(direction="in", length=6, width=1)
-    ax.legend(loc="upper right")
-    ax.grid(False)
+    ax.spines["bottom"].set_color("#a8b8d3")
+    ax.spines["left"].set_color("#a8b8d3")
+    ax.tick_params(direction="in", length=6, width=1, colors="#3a4d7c", labelcolor="#3a4d7c")
+    ax.legend(loc="upper right", frameon=True, framealpha=0.95, edgecolor="#c4d3e8")
+    fig.tight_layout(pad=1.0)
     return fig
 
 
