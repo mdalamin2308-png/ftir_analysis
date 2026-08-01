@@ -4,6 +4,16 @@ import numpy as np
 from pathlib import Path
 from scipy.signal import find_peaks, savgol_filter
 
+plt.rcParams["font.family"] = "serif"
+plt.rcParams["font.serif"] = ["Times New Roman", "Liberation Serif", "DejaVu Serif"]
+plt.rcParams["font.size"] = 12
+plt.rcParams["axes.labelsize"] = 12
+plt.rcParams["axes.titlesize"] = 12
+plt.rcParams["xtick.labelsize"] = 10
+plt.rcParams["ytick.labelsize"] = 10
+plt.rcParams["legend.fontsize"] = 10
+plt.rcParams["axes.linewidth"] = 1.1
+
 try:
     from streamlit.runtime.scriptrunner import get_script_run_ctx
 except ImportError:
@@ -182,19 +192,46 @@ def normalize_transmittance(y):
     return np.clip(y, 0.0, None)
 
 
-def render_spectrum_plot(x, y, baseline, peak_x=None, peak_y=None):
+def render_spectrum_plot(x, y, baseline, peak_x=None, peak_y=None, assignments=None):
     fig, ax = plt.subplots(figsize=(10, 5))
-    ax.plot(x, y, color="black", linewidth=1.5, label="Spectrum")
-    ax.plot(x, baseline, color="firebrick", linestyle="--", linewidth=1.2, label="Baseline")
-    ax.fill_between(x, baseline, y, color="lightgray", alpha=0.4)
+    ax.set_facecolor("#fcfdff")
+    fig.patch.set_facecolor("#fcfdff")
+    ax.plot(x, y, color="#0b1f44", linewidth=1.6, label="Spectrum")
+    ax.plot(x, baseline, color="#d53838", linestyle="--", linewidth=1.3, label="Baseline")
+    ax.fill_between(x, baseline, y, color="#c8d6ff", alpha=0.45)
     if peak_x is not None and peak_y is not None and peak_x.size > 0:
-        ax.scatter(peak_x, peak_y, color="red", s=30, zorder=4, label="Detected peaks")
+        ax.scatter(peak_x, peak_y, color="#d53838", edgecolor="white", linewidth=0.8, s=40, zorder=4, label="Detected peaks")
         for wx, wy in zip(peak_x, peak_y):
-            ax.text(wx, wy - 4, f"{wx:.0f}", color="red", fontsize=8, ha="center", va="top", rotation=90)
+            ax.text(wx, wy - 3.5, f"{wx:.0f}", color="#d53838", fontsize=8, ha="center", va="top", rotation=90)
+    if assignments is not None and peak_x is not None and peak_x.size > 0:
+        labeled = []
+        for wx, wy, text in zip(peak_x, peak_y, assignments):
+            if text is not None:
+                labeled.append((wx, wy, text))
+        labeled = sorted(labeled, key=lambda t: -t[0])
+        top_y = max(y) + 6
+        for idx, (wx, wy, text) in enumerate(labeled[:8]):
+            tier = idx % 4
+            y_text = top_y + tier * 6
+            ax.annotate(
+                text,
+                xy=(wx, wy),
+                xytext=(wx, y_text),
+                textcoords="data",
+                ha="center",
+                va="bottom",
+                fontsize=9,
+                color="#102a5f",
+                bbox={"facecolor": "white", "alpha": 0.85, "edgecolor": "#aac0ff", "boxstyle": "round,pad=0.25"},
+                arrowprops={"arrowstyle": "-", "color": "#7a90c8", "linewidth": 0.8},
+            )
     ax.set_xlim(4000, 400)
-    ax.set_ylim(min(y.min() - 10, 0), max(y.max() + 10, 100))
+    ax.set_ylim(min(y.min() - 10, 0), max(y.max() + 22, 100))
     ax.set_xlabel("Wavenumber (cm$^{-1}$)")
     ax.set_ylabel("Transmittance (%)")
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.tick_params(direction="in", length=6, width=1)
     ax.legend(loc="upper right")
     ax.grid(False)
     return fig
@@ -209,10 +246,31 @@ def load_sample_files():
 
 def main():
     st.set_page_config(page_title="FTIR Polymer ID", layout="wide")
+    st.markdown(
+        '''
+        <style>
+        body {background: linear-gradient(135deg, #f3f7ff 0%, #ffffff 100%); color: #0b1f44;}
+        div.block-container {padding: 1.5rem 2rem; background: rgba(255,255,255,0.96); border-radius: 20px;}
+        div[data-testid='stSidebar'] {background: linear-gradient(180deg, #1f3c88, #0f2245); color: #f8fbff;}
+        div[data-testid='stSidebar'] .stTextInput>div>div>input,
+        div[data-testid='stSidebar'] .stTextArea>div>div>textarea,
+        div[data-testid='stSidebar'] .stSelectbox>div>div>div>div>div {background: #f4f7ff; color: #0b1f44;}
+        div[data-testid='stSidebar'] button {border-radius: 12px; background-color: #0f2245; color: #f8fbff;}
+        div[data-testid='stHeader'] {background: transparent;}
+        h1, h2, h3, p, label, button {font-family: 'Times New Roman', serif;}
+        </style>
+        ''',
+        unsafe_allow_html=True,
+    )
     st.title("FTIR Polymer Identification")
     st.markdown(
-        "Upload a spectrum file or paste two-column wavenumber/transmittance text data. "
-        "The app will detect FTIR peaks and rank candidate polymers."
+        '''
+        <div style='padding:18px 22px; border-radius:18px; background: linear-gradient(135deg, #eaf0ff, #ffffff); color:#0b1f44; font-size:14px;'>
+            <strong>Smart ATR-FTIR polymer analysis with peak detection and assignment layout.</strong><br>
+            <span style='color:#344e86;'>Upload, paste, or use sample data; the app highlights peaks and ranks polymer candidates.</span>
+        </div>
+        ''',
+        unsafe_allow_html=True,
     )
 
     input_mode = st.sidebar.radio("Input mode:", ["Upload file", "Paste direct input", "Use sample file"])
@@ -278,10 +336,22 @@ def main():
         results = match_polymer(peak_x, peak_prom)
         ranked = sorted(results.items(), key=lambda kv: (kv[1]["confidence"], kv[1]["weight_sum"]), reverse=True)
 
+        assigned_labels = []
+        for wn in peak_x:
+            hit = find_closest_assignment(wn)
+            assigned_labels.append(hit[0] if hit is not None else None)
+
         st.subheader(f"Spectrum: {source_name}")
         col1, col2 = st.columns([2, 1])
         with col1:
-            fig = render_spectrum_plot(x, y, baseline, peak_x=peak_x, peak_y=peak_y)
+            fig = render_spectrum_plot(
+                x,
+                y,
+                baseline,
+                peak_x=peak_x,
+                peak_y=peak_y,
+                assignments=assigned_labels,
+            )
             st.pyplot(fig)
         with col2:
             if ranked:
@@ -340,6 +410,13 @@ def main():
     else:
         st.info("Choose an input mode and click 'Analyze spectrum' to start.")
 
+    st.markdown(
+        "<div style='margin-top:24px; padding:12px 16px; border-radius:14px; background: linear-gradient(135deg, #fff9ec, #f7f0d7); "
+        "color:#3d3d3d; font-size:12px;'>"
+        "<strong>Application Developed by Md. Al Amin, M.Sc.</strong>"
+        "</div>",
+        unsafe_allow_html=True,
+    )
     st.sidebar.markdown("---")
     st.sidebar.write("Run this app with `streamlit run streamlit_app.py`")
 
