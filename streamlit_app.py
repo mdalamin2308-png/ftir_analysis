@@ -161,6 +161,19 @@ def find_closest_assignment(wavenumber, tolerance=15):
     return assignment, polymer, rp, diff
 
 
+def find_important_assignment(wavenumber, tolerance=15, min_importance=2):
+    best = None
+    for polymer, peaks in REFERENCE_PEAKS.items():
+        for rp, assignment, importance in peaks:
+            diff = abs(wavenumber - rp)
+            if diff <= tolerance and importance >= min_importance and (best is None or diff < best[0]):
+                best = (diff, assignment, polymer, rp, importance)
+    if best is None:
+        return None
+    diff, assignment, polymer, rp, importance = best
+    return assignment, polymer, rp, diff, importance
+
+
 def match_polymer(peak_x, peak_prom, tolerance=20):
     results = {}
     for polymer, ref_peaks in REFERENCE_PEAKS.items():
@@ -352,7 +365,7 @@ def main():
 
         assigned_labels = []
         for wn in peak_x:
-            hit = find_closest_assignment(wn)
+            hit = find_important_assignment(wn, tolerance=20, min_importance=2)
             assigned_labels.append(hit[0] if hit is not None else None)
 
         st.subheader(f"Spectrum: {source_name}")
@@ -404,14 +417,15 @@ def main():
 
         label_rows = []
         for wn, py in zip(peak_x, peak_y):
-            hit = find_closest_assignment(wn)
+            hit = find_important_assignment(wn, tolerance=20, min_importance=2)
             if hit is not None:
-                assignment, _, rp, diff = hit
+                assignment, _, rp, diff, importance = hit
                 label_rows.append(
                     {
                         "Peak cm-1": f"{wn:.1f}",
                         "Transmittance": f"{py:.1f}%",
                         "Assignment": assignment,
+                        "Importance": importance,
                         "Δ cm-1": f"{diff:.1f}",
                     }
                 )
